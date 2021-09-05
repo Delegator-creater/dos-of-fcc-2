@@ -314,12 +314,12 @@ double first_integral(double s , void * parametr_ ) {
 	}
 	delete[] arr_bounds;
 
-	all_prm::vfi data;
+	/*all_prm::vfi data;
 	data.int_for_zeta = all_res;
 	data.s = s;
 	data.zeta1 = bl[0];
 	data.zeta2 = bu[0];
-	parametr->value_first_int.push_back(data);
+	parametr->value_first_int.push_back(data);*/
 	return all_res;
 }
 template<const int prm_int>
@@ -445,13 +445,13 @@ void progr(const double t , const double error1 , const double error2 , const do
 		flagu = flagl = false;
 		cout << second_arg << " \t";
 		double res = main_function(t, second_arg - 6. * t, prm, type_bounds);
-		cout << res << " \t";
-		cout << flagu ? 1 : 0;
-		cout << " \t";
-		cout << flagl ? -1 : 0;
-		cout << " \t";
-		for (all_prm::vfi& i : prm.value_first_int)
-			cout << i.s << " \t" << i.int_for_zeta << " \t" << i.zeta1 << " \t" << i.zeta2 << " \t";
+		cout << res ;
+		//cout << flagu ? 1 : 0;
+		//cout << " \t";
+		//cout << flagl ? -1 : 0;
+		//cout << " \t";
+		//for (all_prm::vfi& i : prm.value_first_int)
+		//	cout << i.s << " \t" << i.int_for_zeta << " \t" << i.zeta1 << " \t" << i.zeta2 << " \t";
 		cout << " \n";
 		prm.value_first_int.clear();
 		
