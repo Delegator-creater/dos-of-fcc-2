@@ -29,8 +29,10 @@ public:
 
 	double t;
 	double s;
-	double error;
-	double error_;
+	double error_ext1;
+	double error_ext2;
+	double error_in1;
+	double error_in2;
 
 
 
@@ -226,93 +228,63 @@ double first_integral(double s , void * parametr_ ) {
 
 	auto parametr = (all_prm*)parametr_;
 
-	static std::ofstream file_logs_f_int("logs_f_int");
-	file_logs_f_int.precision(3);
-	const double eps_xi = 0.01;
+
 
 	parametr->s = s;
 	double t = parametr->t;
 	double e = parametr->get_e();
 
-	double bl[2];
-	double bu[2];
+	double bl;
+	double bu;
+
+	switch (prm_comp)
+	{
+	case 0: {
+		bl = parametr->down(e, t, s);
+		bu = parametr->up(e, t, s);
+		if (bu > 1)
+			bu = 1;
+		if (bl < 0)
+			bl = 0;
+		if (bu < bl)
+			return 0;
+
+		bl = std::sqrt(bl);
+		bu = std::sqrt(bu);
+	}
+	case 1: {
+		bl = 0.0;
+		bu = 1.0;
+	}
+	}
 
 
-	bl[0] = parametr->down(e, t, s);
-	bu[0] = parametr->up(e, t, s);
-	if (bu[0] > 1)
-		bu[0] = 1;
-	if (bl[0] < 0)
-		bl[0] = 0;
-	if (bu[0] < bl[0])
-		return 0;
 
-	bl[0] = std::sqrt(bl[0]);
-	bu[0] = std::sqrt(bu[0]);
 
-	bl[1] = 0.0;
-	bu[1] = 1.0;
-
-	double** arr_bounds = new double* [3];
-	for (size_t i = 0; i < 3; ++i)
-		arr_bounds[i] = new double[2];
-	arr_bounds[0][0] = bl[1];
-	arr_bounds[0][1] = bl[0];
-	arr_bounds[1][0] = bl[0];
-	arr_bounds[1][1] = bu[0];
-	arr_bounds[2][0] = bu[0];
-	arr_bounds[2][1] = bu[1];
-
-	flagu = true;
+	flagu = false;
 	flagl = false;
 
 
-	double result[3] = {0,0,0};
+	double result;
 	double abserr;
 
 	gsl_function f_integral;
 	f_integral.function = parametr->f;
 	f_integral.params = parametr_;
 
-	bool coundit_bounds[3];
-	coundit_bounds[0] = std::abs(bl[0]- 0) > 0.001;
-	coundit_bounds[1] = true;
-	coundit_bounds[0] = std::abs(bu[0]- 1 ) >0.001;
 
-	for (size_t i = 0 ; i < 3 ; ++i)
-		if (coundit_bounds[i])
-			gsl_integration_qag(&(f_integral),
-				arr_bounds[i][0], 
-				arr_bounds[i][1],
-				parametr->error,
-				parametr->error_,
+	gsl_integration_qags(&(f_integral),
+				bl, 
+				bu,
+				parametr->error_in1,
+				parametr->error_in2,
 				parametr->size_memory_2 ,
-				6,
 				parametr->memory2,
-				&result[i],
+				&result,
 				&abserr);
-
-	if ((result[0] != 0) || (result[2] != 0)) {
-		file_logs_f_int
-			<< e + 6. * parametr->t << '\t'
-			<< parametr->t << '\t'
-			<< s << '\t'
-			<< bl[0] << '\t'
-			<< bu[0] << '\t'
-			<< result[0] << '\t'
-			<< result[1] << '\t'
-			<< result[2] << '\n';
-	}
 
 	//file_logs_f_int.close();
 
-
-	double all_res = 0;
-	for (size_t i = 0; i < 3; ++i) {
-		delete[] arr_bounds[i];
-		all_res += result[i];
-	}
-	delete[] arr_bounds;
 
 	/*all_prm::vfi data;
 	data.int_for_zeta = all_res;
@@ -320,7 +292,7 @@ double first_integral(double s , void * parametr_ ) {
 	data.zeta1 = bl[0];
 	data.zeta2 = bu[0];
 	parametr->value_first_int.push_back(data);*/
-	return all_res;
+	return result;
 }
 template<const int prm_int>
 double second_integral(all_prm & a_prm  ) {
@@ -338,8 +310,8 @@ double second_integral(all_prm & a_prm  ) {
 	gsl_integration_qag(&f_integral,
 			-1.,
 			std::min(1., std::abs(t)),
-			a_prm.error,
-			a_prm.error_,
+			a_prm.error_ext1,
+			a_prm.error_ext2,
 			a_prm.size_memory_1,
 			6,
 			a_prm.memory1,
@@ -388,14 +360,16 @@ double rho(double t, double e , all_prm & parametr , int prm_ ) {
 }
 
 template<const int prm_progr = 0>
-void progr(const double t , const double error1 , const double error2 , const double e = 0  , int type_bounds = 0 
+void progr(const double t , const double error_ext1 , const double error_ext2 , const double error_in1, const double error_in2, const double e = 0  , int type_bounds = 0
 	, double step=0.1) {
 
 	using namespace std;
 	
 	all_prm prm(t);
-	prm.error  = error1;
-	prm.error_ = error2;
+	prm.error_ext1  = error_ext1;
+	prm.error_ext2  = error_ext2;
+	prm.error_in1   = error_in1;
+	prm.error_in2   = error_in2;
 	   	 
 
 	UpBounds ub;
@@ -511,11 +485,11 @@ int main(int argc, char *argv[]) {
 
 		if ( std::strcmp( argv[1] , "-c") == 0 ) {
 			std::cout << "start -c\n";
-			progr(arr_double[0], arr_double[1], arr_double[2] , arr_double[3] , arr_double[4] ,arr_double[5] );
+			progr(arr_double[0], arr_double[1], arr_double[2] , arr_double[3] , arr_double[4] ,arr_double[5] , arr_double[6], arr_double[7]);
 		}
 		if ( std::strcmp( argv[1] , "-f" ) == 0 ) {
 			std::cout << "start -f\n";
-			progr<1>(arr_double[0], arr_double[1], arr_double[2], arr_double[3] , arr_double[4] ,arr_double[5]);
+			progr<1>(arr_double[0], arr_double[1], arr_double[2], arr_double[3], arr_double[4], arr_double[5], arr_double[6], arr_double[7]);
 		}
 		
 	}
