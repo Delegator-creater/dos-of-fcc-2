@@ -4,7 +4,7 @@
 #include <functional>
 #include <string>
 #include <deque>
-#include<cmath>
+#include <cmath>
 
 //auto const sqr = std::bind(std::pow<double, double>, std::placeholders::_1, 2);
 double sqr_(double x);

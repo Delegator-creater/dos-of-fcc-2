@@ -65,22 +65,22 @@ protected:
 
 	inline double Z(double e, double t, double s, double f) {
 		return ((f - e) / 4. + (1. - 2. * t)* sqr_(s))
-			/ ((1. + 2. * t)* sqr_(1 - std::abs(s)));
+			/ ((1. + 2. * t)* sqr_(1. - std::abs(s)));
 	}
 
-	inline double s1(ARG_3, int sign) {
+	inline double s1(ARG_3, double sign) {
 		double a = e /
-			(1. - 2. * t + 1. / t);
-		if (a > 0)
-			return sign * 0.50*sqrt(a);
+			(1. - 2.*t + 1./t);
+		if (a > 0.)
+			return sign * 0.50* std::sqrt(a);
 		else
-			return 0;
+			return 0.;
 	}
 
-	inline double s2(ARG_3, int sign, int sigm) {
+	inline double s2(ARG_3, double sign, double sigm) {
 		auto a = 1. - (1. - 2. * t)*(t - e / 4.);
 		if (a > 0)
-			return -sigm / (1. - 2. * t) + sign * sqrt(a)
+			return -sigm / (1. - 2. * t) + sign * std::sqrt(a)
 			/ std::abs(1. - 2. * t);
 		else
 			return 0;
@@ -89,7 +89,7 @@ protected:
 	inline double u1(ARG_3, double sign) {
 		auto a = -4 * t * t + 1 / 4 / t * (e + 4) - t * e + 3;
 		if (a > 0.)
-			return -t * (1. + 2. * t) / (1. - 4. * sqr_(t)) + sign*std::abs(t) / (1. - 4. * t*t)*sqrt(a);
+			return -t * (1. + 2. * t) / (1. - 4. * sqr_(t)) + sign*std::abs(t) / (1. - 4. * t*t)* std::sqrt(a);
 		else
 			return 0;
 	}
@@ -97,7 +97,7 @@ protected:
 	inline double u2(ARG_3, double sign, double sigm) {
 		double a = 2. - e * t + 2. * sigm  * (1. + 2. * t);
 		if (a > 0)
-			return (1. + 2. * t + sigm) / (4. * t) + sign * sqrt(a)
+			return (1. + 2. * t + sigm) / (4. * t) + sign * std::sqrt(a)
 			/ std::abs(4. * t);
 		else
 			return 0;
@@ -119,9 +119,9 @@ public:
 		double sigm = double(SIGN(s)) * sigm_;
 		auto return_value1 = std::function<double(void)>( [=]() {return double(1); });
 		auto return_value2 = std::function<double(void)>( [=]() {return Z(e, t, s, sigm_*8. * s + 4. * t); });
-		if (t > -1 / 2 && t < 0)
+		if (t > -0.5 && t < 0.)
 			std::swap(return_value1 , return_value2);
-		if (inter(std::abs(s), u2(e, t, s, -1, sigm), u2(e, t, s, 1, sigm)))
+		if (inter(std::abs(s), u2(e, t, s, -1., sigm), u2(e, t, s, 1., sigm)))
 			return return_value1();
 		else 
 			return return_value2();
@@ -135,7 +135,7 @@ public:
 		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, 4.* sqr_(s)/t); });
 		if ( (0.< t) && (t < 0.5))
 			std::swap(return_value1, return_value2);
-		if (inter(std::abs(s), u1(e, t, s, -1), u1(e, t, s, 1)))
+		if (inter(std::abs(s), u1(e, t, s, -1.), u1(e, t, s, 1.)))
 			return return_value1();
 		else
 			return return_value2();
@@ -144,15 +144,15 @@ public:
 	//*******************************//
 	fd_3x get_bounds(const double t_) {
 		if (t_ >= 0) {
-			return [&](ARG_3) {return (std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, -1) : this->bounds2(e, t, s); };
+			return [=](ARG_3) {return (std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, -1.) : this->bounds2(e, t, s); };
 			// return Z(... , -8s - 4t) or Z(... , 4s^2/t)
 		}
 		else if (t_ >= -0.5) {
-			return [&](ARG_3) {return  this->bounds1(e, t, s, -1); };
+			return [=](ARG_3) {return  this->bounds1(e, t, s, -1.); };
 			// return Z(... , -8s - 4t)
 		}
 		else {
-			return [&](ARG_3) {return (std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, 1) : this->bounds2(e, t, s); };
+			return [=](ARG_3) {return (std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, 1.) : this->bounds2(e, t, s); };
 			// return Z(... , 8s - 4t) or Z(... , 4s^2/t)
 		}
 	}
@@ -168,13 +168,13 @@ public:
 
 	//*******************************//
 
-	/// Z(e_1 , t , s ,sigma_ * 8s +4t)
+	/// Z(e_1 , t , s ,sigma * 8s +4t)
 	double bounds1(ARG_3 , double sigm) {
 		auto return_value1 = std::function<double(void)>([=]() {return double(0); });
-		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, sigm*8 * s + 4 * t); });
-		if ( std::abs(t) < 0.5 )
+		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, sigm*8. * s + 4. * t); });
+		if ( std::abs(t) > 0.5 )
 			std::swap(return_value1, return_value2);
-		if (inter(std::abs(s), s2(e, t, s, -1, sigm), s2(e, t, s, 1, sigm)))
+		if ( (s2(e, t, s, -1., sigm) < s) && (s < s2(e, t, s, 1., sigm)))
 			return return_value2();
 		else
 			return return_value1();
@@ -185,10 +185,10 @@ public:
 	///Z(e_1 , t , s , -4s^2/t)
 	double bounds2(ARG_3) {
 		auto return_value1 = std::function<double(void)>([=]() {return double(0); });
-		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, 4 * sqr_(s) / t); });
-		if ( inter(t , 0. , 1 ) )
+		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, 4. * sqr_(s) / t); });
+		if ((0. < t) && (t < 1.) )
 			std::swap(return_value1, return_value2);
-		if (inter(std::abs(s), s1(e, t, s, -1), s1(e, t, s, 1)))
+		if (inter(s, s1(e, t, s, -1.), s1(e, t, s, 1.)))
 			return return_value2();
 		else
 			return return_value1();
@@ -200,14 +200,14 @@ public:
 	
 
 	fd_3x get_bounds(const double t_) {
-		if (t_ >= 0) {
-			return [&](ARG_3) {return this->bounds1(e, t, s, 1); };
+		if (t_ >= 0.) {
+			return [=](ARG_3) {return this->bounds1(e, t, s, 1.); };
 		}// return Z(... , 8s - 4t)
 		else if (t_ >= -0.5) {
-			return [&](ARG_3) {return ((std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, 1) : this->bounds2(e, t, s)); };
+			return [=](ARG_3) {return ((std::abs(s) > std::abs(t)) ? this->bounds1(e, t, s, 1.) : this->bounds2(e, t, s)); };
 		}// return Z(... , 8s - 4t) or Z(... , 4s^2/t)
 		else {
-			return [&](ARG_3) {return this->bounds1(e, t, s, -1); };
+			return [=](ARG_3) {return this->bounds1(e, t, s, -1.); };
 		}// return Z(... , -8s - 4t) 
 	}
 
@@ -247,8 +247,8 @@ double first_integral(double s , void * parametr_ ) {
 	if (bu[0] < bl[0])
 		return 0;
 
-	bl[0] = sqrt(bl[0]);
-	bu[0] = sqrt(bu[0]);
+	bl[0] = std::sqrt(bl[0]);
+	bu[0] = std::sqrt(bu[0]);
 
 	bl[1] = 0.0;
 	bu[1] = 1.0;
