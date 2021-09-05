@@ -242,12 +242,11 @@ double first_integral(double s , void * parametr_ ) {
 	bu[0] = parametr->up(e, t, s);
 	if (bu[0] > 1)
 		bu[0] = 1;
-	if (bu[0] < 0)
-		return 0;
 	if (bl[0] < 0)
 		bl[0] = 0;
-	if (bl[0] > 1)
+	if (bu[0] < bl[0])
 		return 0;
+
 	bl[0] = sqrt(bl[0]);
 	bu[0] = sqrt(bu[0]);
 
@@ -309,9 +308,11 @@ double first_integral(double s , void * parametr_ ) {
 
 
 	double all_res = 0;
-	for (size_t i = 0; i < 3; ++i)
+	for (size_t i = 0; i < 3; ++i) {
+		delete[] arr_bounds[i];
 		all_res += result[i];
-
+	}
+	delete[] arr_bounds;
 
 	all_prm::vfi data;
 	data.int_for_zeta = all_res;
