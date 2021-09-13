@@ -1,6 +1,8 @@
 #ifndef PHI_H
 #define PHI_H
 
-double phi(double x);
+double phi(double);
+
+double psi(double);
 
 #endif

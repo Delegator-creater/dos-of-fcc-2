@@ -14,6 +14,9 @@
 #include "spt_func.h"
 #include <array>
 #include "Integr.h"
+#include <map>
+#include "Bounds.h"
+
 std::string prm_start;
 
 using namespace std::placeholders;
@@ -61,52 +64,6 @@ public:
 
 using fd_2x = std::function<double(double, double)>;
 using fd_3x = std::function<double(double, double, double)>;
-
-class Bounds{
-protected:
-
-	inline double Z(double e, double t, double s, double f) {
-		return ((f - e) / 4. + (1. - 2. * t)* sqr_(s))
-			/ ((1. + 2. * t)* sqr_(1. - std::abs(s)));
-	}
-
-	inline double s1(ARG_3, double sign) {
-		double a = e /
-			(1. - 2.*t + 1./t);
-		if (a > 0.)
-			return sign * 0.50* std::sqrt(a);
-		else
-			return 0.;
-	}
-
-	inline double s2(ARG_3, double sign, double sigm) {
-		auto a = 1. - (1. - 2. * t)*(t - e / 4.);
-		if (a > 0)
-			return -sigm / (1. - 2. * t) + sign * std::sqrt(a)
-			/ std::abs(1. - 2. * t);
-		else
-			return 0;
-	}
-
-	inline double u1(ARG_3, double sign) {
-		auto a = -4 * t * t + 1 / 4 / t * (e + 4) - t * e + 3;
-		if (a > 0.)
-			return -t * (1. + 2. * t) / (1. - 4. * sqr_(t)) + sign*std::abs(t) / (1. - 4. * t*t)* std::sqrt(a);
-		else
-			return 0;
-	}
-
-	inline double u2(ARG_3, double sign, double sigm) {
-		double a = 2. - e * t + 2. * sigm  * (1. + 2. * t);
-		if (a > 0)
-			return (1. + 2. * t + sigm) / (4. * t) + sign * std::sqrt(a)
-			/ std::abs(4. * t);
-		else
-			return 0;
-	}
-
-
-};
 
 class UpBounds final : public Bounds {
 public:
@@ -223,6 +180,15 @@ double f(double x , void * param) {
 bool flagl = false;
 bool flagu = false;
 
+using data_for_cod_status = struct {
+	double e;
+	double t;
+	double s;
+	int num_interg;
+};
+
+std::map<int, std::deque<data_for_cod_status*> > list_cods_status;
+
 template<const int prm_comp>
 double first_integral(double s , void * parametr_ ) {
 
@@ -272,16 +238,33 @@ double first_integral(double s , void * parametr_ ) {
 	f_integral.function = parametr->f;
 	f_integral.params = parametr_;
 
+	double bounds[2] = {bl , bu};
 
-	gsl_integration_qags(&(f_integral),
-				bl, 
-				bu,
+
+	auto status = gsl_integration_qagp(&(f_integral),
+				bounds, 
+				2,
 				parametr->error_in1,
 				parametr->error_in2,
 				parametr->size_memory_2 ,
 				parametr->memory2,
 				&result,
 				&abserr);
+
+
+	
+	if (status != 0) {
+		if (list_cods_status.find(status) == list_cods_status.end()) 
+			list_cods_status.insert(std::pair<int , std::deque<data_for_cod_status*> >(status, std::deque<data_for_cod_status*>()));
+		auto elem_list = list_cods_status.find(status);
+		data_for_cod_status* data = new data_for_cod_status;
+		data->e = e;
+		data->t = t;
+		data->s = s;
+		data->num_interg = 2;
+		elem_list->second.push_back(data);
+
+	}
 
 	//file_logs_f_int.close();
 
@@ -307,7 +290,7 @@ double second_integral(all_prm & a_prm  ) {
 
 	double abserr;
 	double result;
-	gsl_integration_qag(&f_integral,
+	auto status = gsl_integration_qag(&f_integral,
 			-1.,
 			std::min(1., std::abs(t)),
 			a_prm.error_ext1,
@@ -317,7 +300,20 @@ double second_integral(all_prm & a_prm  ) {
 			a_prm.memory1,
 			&result,
 			&abserr);
+	
+	if (status != 0) {
+		if (list_cods_status.find(status) == list_cods_status.end())
+			list_cods_status.insert(std::pair<int, std::deque<data_for_cod_status*> >(status, std::deque<data_for_cod_status*>() ));
+		auto elem_list = list_cods_status.find(status);
+		data_for_cod_status* data = new data_for_cod_status;
+		data->e = a_prm.get_e();
+		data->t = t;
+		data->num_interg = 1;
+		elem_list->second.push_back(data);
 
+	}
+	//if (status != 0)
+	//	std::cerr << "GSL status ext_int: " << gsl_strerror(status) <<'\n';
 
 
 	//result = integration(first_integral<prm_int>, &a_prm, -1, std::min(std::std::abs(t), 1.), a_prm.error, a_prm.error_);
@@ -357,6 +353,17 @@ double rho(double t, double e , all_prm & parametr , int prm_ ) {
 	catch(...){
 		std::cerr << "error in function \"rho\"";
 	}	 
+}
+
+template<typename Str, typename T , typename C>
+void print(Str &  del, Str & end,C& out, T& word) {
+	out << word << end;
+}
+
+template<typename Str,typename T , typename ...R , typename C >
+void print(Str & del , Str & end ,C& out ,T& word, R& ... r) {
+	out << word << delimtr;
+	print(del , end ,out, r...);
 }
 
 template<const int prm_progr = 0>
@@ -430,6 +437,13 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 		prm.value_first_int.clear();
 		
 	}
+	const char * delim = "\t";
+	const char * end = "\n";
+	for (auto& cods : list_cods_status) {
+		std::cerr << gsl_strerror(cods.first) << '\n';
+		for (auto& data : cods.second)
+			std::cerr << "       " << data->e << "\t" << data->t << "\n";
+ 	}
 }
 
 // ===========================================================================

@@ -37,7 +37,6 @@ double Func::operator()(ARG_3, double x)  {
 	double f_ = 1.;
 	f_ *= phi(arg);
 	f_ /= sqrt(M*R*(1 - sqr_(x)) );
-	f_ = f_ > 10E5 ? 10E5 : f_;
 	return f_;
 }
 #endif
