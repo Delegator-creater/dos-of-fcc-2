@@ -1,12 +1,15 @@
 #include "Bounds.h"
 #include "Macros.h"
+#include "spt_func.h"
+#include <cmath>
 
-inline double Bounds::Z(ARG_3, double f){
+double Bounds::Z(ARG_3, double f){
 	return ((f - e) / 4. + (1. - 2. * t) * sqr_(s))
 		/ ((1. + 2. * t) * sqr_(1. - std::abs(s)));
 }
 
-inline double Bounds::s1(ARG_3, double sign); {
+
+double Bounds::s1(ARG_3, double sign) {
 	double a = e /
 		(1. - 2. * t + 1. / t);
 	if (a > 0.)
@@ -15,7 +18,7 @@ inline double Bounds::s1(ARG_3, double sign); {
 		return 0.;
 }
 
-inline double Bounds::s2(ARG_3, double sign, double sigm); {
+double Bounds::s2(ARG_3, double sign, double sigm){
 	auto a = 1. - (1. - 2. * t) * (t - e / 4.);
 	if (a > 0)
 		return -sigm / (1. - 2. * t) + sign * std::sqrt(a)
@@ -24,7 +27,7 @@ inline double Bounds::s2(ARG_3, double sign, double sigm); {
 		return 0;
 }
 
-inline double Bounds::u1(ARG_3, double sign); {
+double Bounds::u1(ARG_3, double sign) {
 	auto a = -4 * t * t + 1 / 4 / t * (e + 4) - t * e + 3;
 	if (a > 0.)
 		return -t * (1. + 2. * t) / (1. - 4. * sqr_(t)) + sign * std::abs(t) / (1. - 4. * t * t) * std::sqrt(a);
@@ -32,7 +35,7 @@ inline double Bounds::u1(ARG_3, double sign); {
 		return 0;
 }
 
-inline double Bounds::u2(ARG_3, double sign, double sigm); {
+double Bounds::u2(ARG_3, double sign, double sigm){
 	double a = 2. - e * t + 2. * sigm * (1. + 2. * t);
 	if (a > 0)
 		return (1. + 2. * t + sigm) / (4. * t) + sign * std::sqrt(a)
@@ -86,7 +89,7 @@ fd_3x UpBounds::get_bounds(const double t_) {
 	//*******************************//
 
 	/// Z(e_1 , t , s ,sigma * 8s +4t)
-	double DownBounds::bounds1(ARG_3, double sigm){
+double DownBounds::bounds1(ARG_3, double sigm){
 		auto return_value1 = std::function<double(void)>([=]() {return double(0); });
 		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, sigm * 8. * s + 4. * t); });
 		if (std::abs(t) > 0.5)
@@ -100,7 +103,7 @@ fd_3x UpBounds::get_bounds(const double t_) {
 	//*******************************//
 
 	///Z(e_1 , t , s , -4s^2/t)
-	double DownBounds::bounds2(ARG_3) {
+double DownBounds::bounds2(ARG_3) {
 		auto return_value1 = std::function<double(void)>([=]() {return double(0); });
 		auto return_value2 = std::function<double(void)>([=]() {return Z(e, t, s, 4. * sqr_(s) / t); });
 		if ((0. < t) && (t < 1.))
@@ -116,7 +119,7 @@ fd_3x UpBounds::get_bounds(const double t_) {
 
 
 
-	fd_3x DownBounds::get_bounds(const double t_) {
+fd_3x DownBounds::get_bounds(const double t_) {
 		if (t_ >= 0.) {
 			return [=](ARG_3) {return this->bounds1(e, t, s, 1.); };
 		}// return Z(... , 8s - 4t)

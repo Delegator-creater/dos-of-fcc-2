@@ -1,6 +1,3 @@
-#ifndef SPT_FUNC_CPP
-#define SPT_FUNC_CPP
-
 #include "spt_func.h"
 #include <deque>
 #include <string>
@@ -20,4 +17,3 @@ double sqr_(double x) {
 	return x*x;
 }
 
-#endif
