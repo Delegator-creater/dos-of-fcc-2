@@ -4,14 +4,15 @@
 #include <string>
 
 class all_prm {
-	double e;
+	
 
 public:
-	all_prm(double t) : func(t , std::string("")) {}
+	all_prm(double t) : func(t , std::string("dfhfh")) {}
 
 	double get_e() { return e; }
 	void set_e(double new_e) { e = new_e; }
 
+	double e;
 	double t;
 	double s;
 	double error_ext1;
@@ -19,12 +20,16 @@ public:
 	double error_in1;
 	double error_in2;
 
-
+	UpBounds   * c_ub;
+	DownBounds * c_db;
 
 	double(*f)(double x, void* param);
 
 	std::function<double(double, double, double)> up;
 	std::function<double(double, double, double)> down;
+
+	double v_ub;
+	double v_db;
 
 	Func func;
 
@@ -42,6 +47,9 @@ public:
 	};
 	std::deque<vfi> value_first_int;
 
+	// tmp_value:
+	int  type_bounds_up;
+	int  type_bounds_down;
 };
 
 #endif

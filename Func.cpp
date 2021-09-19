@@ -10,9 +10,9 @@
 double Func::operator()(ARG_3, double x)  {
 
 	double R_ = (1. + t - 2. * sqr_(t))*sqr_(s) - 
-	t * (e / 4. + (1. + 2.* t)* sqr_(1. - std::abs(s) )* sqr_(x));
+	t * (e / 4. + (1. + 2.* t)* sqr_(1. - std::abs(s) )*x);
 
-	double M = sqr_(1.+ std::abs(s)) - sqr_(1.- std::abs(s))* sqr_(x) ;
+	double M = sqr_(1.+ std::abs(s)) - sqr_(1.- std::abs(s))* x;
 
 	double arg = (sqrt(R_) + s) / t;
 	
@@ -34,9 +34,9 @@ double Func::operator()(ARG_3, double x)  {
 		return 0;
 
 	}
-	double f_ = 1.;
+	double f_ = 1./(2*std::pow(3.14159,3));
 	f_ *= phi(arg);
-	f_ /= sqrt(M*R_*(1 - sqr_(x)) );
+	f_ /= sqrt(M*R_*(1 -x)*x );
 	return f_;
 }
 #endif

@@ -15,6 +15,15 @@ protected:
 
 	double u2(ARG_3, double sign, double sigm); 
 
+
+
+public:
+	int type_bounds;
+	void edit_fild(int x) {
+		type_bounds = x;
+	}
+
+
 };
 
 using fd_2x = std::function<double(double, double)>;

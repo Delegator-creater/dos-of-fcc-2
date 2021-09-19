@@ -55,6 +55,7 @@ inline bool inter(Num1 x, Num2 x1, Num3 x2)
 
 template<const int type>// 0 , -1 , 1
 double R_f(ARG_3, double d) {
+	std::cerr << "Invalid template argument in spt_func.h/R\n";
 	throw "Invalid template argument in spt_func.h/R";
 	return double(0);
 }
@@ -79,8 +80,14 @@ double R_f<1>(ARG_3, double d) {
 template<const int bounds>
 double arg_psi(ARG_3, double d ) {
 	double a1 = (1.+2.*t)*sqr_(1.-std::abs(s))*d;
-	double a2 = t - static_cast<double>(bounds) * s + std::sqrt(R_f<bounds>);
-	return a1 / a2;
+	double a2 = t - double(bounds) * s + std::sqrt(R_f<bounds>(e,t,s,d));
+	double result = a1 / a2;
+	if ((R_f<bounds>(e, t, s, d) <= 0) || (result <=0 ) || (result >= 1 )) {
+		std::cerr << "Error in function arg_psi, bounds =" << bounds << " e=" << e << " t=" << t << " s=" << s << " d=" << d <<" sqr_(t+s)="<< sqr_(t + s) <<
+			" t * (1. + 2. * t)=" << t * (1. + 2. * t) << " result=" << result << " R_f<bounds>(e, t, s, d)="<< R_f<bounds>(e, t, s, d) << '\n';
+		throw 1;
+	}
+	return result;
 }
 
 

@@ -22,11 +22,121 @@ std::string prm_start;
 
 using namespace std::placeholders;
 
+/*/class stack_error {
+	using data = struct 
+	{
+		double* data_;
+		char* comment;
+		size_t size_data;
+		size_t size_comment;
+		
+	};
 
+	template<typename T , typename ...P>
+	size_t get_size_pack(T t , P ...& p) {
+		return get_size_pack(p...) + 1;
+	}
+
+
+	size_t get_size_pack(double d) {
+		return 1;
+	}
+
+	template< const int N = 0 ,typename ...P >
+	void add_double(double * arr_double ,double d , P ... & p) {
+		arr_double[N] = d;
+		add_double<N+1>(arr_double , p...);
+	}
+
+	template<const int N>
+	void add_double(double* arr_double, double d) {
+		arr_double[N] = d;
+	}
+
+
+	std::map<std::string, data> stack;
+public:
+
+	template<typename D>
+	void insert(char namedata[] ,char comment[], D... & d) {
+		data data_;
+		data_.data_ = new double[ data_.size_data = get_size_pack(d...) ];
+		add_double(data_.data_, d...);
+		size_t size_comment = 0;
+		while ( std::strcmp( comment[size_comment++] ,'\0') == 0 ){}
+		data_.comment = new char[data_.size_comment = size_comment];
+		for (size_t i = 0; i < size_comment; ++i)
+			data_.comment[i] = comment[i];
+
+		std::string str_namedata(namedata);
+
+		stack.insert(std::pair(str_namedata , data_) );
+
+	}
+
+	template<typename OUT>
+	void print_in(OUT out) {
+		for (auto& i : stack) {
+			out << i.first << '\n';
+			for (size_t j = 0 ; j < i.second.size_comment)
+		}
+	}
+};
+*/
+
+bool tmp(int x, int y) {
+	return std::abs(x - y) < 0.1;
+}
 
 double f(double x , void * param) {
 	auto prm = (all_prm *)param;
-	return prm->func(prm->get_e(), prm->t, prm->s, x);
+	double Q1 = -1;
+	double Q2 = -1;
+
+	const auto cond1 = std::bind(tmp , prm->type_bounds_down , _1);
+	const auto cond2 = std::bind(tmp , prm->type_bounds_up , _1);
+
+	double Q = prm->func(prm->e, prm->t, prm->s, prm->v_db + x);
+	Q += prm->func(prm->e, prm->t, prm->s, prm->v_ub - x);
+	
+	try {
+
+		if (cond1(1))
+			Q1 = prm->func.Q<1>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+		if (cond1(2))
+			Q1 = prm->func.Q<2>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+		if (cond1(3))
+			Q1 = prm->func.Q<3>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+		if (cond1(4))
+			Q1 = prm->func.Q<4>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+
+		if (cond2(1))
+			Q2 = prm->func.Q<1>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+		if (cond2(2))
+			Q2 = prm->func.Q<2>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+		if (cond2(3))
+			Q2 = prm->func.Q<3>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+		if (cond2(5))
+			Q2 = prm->func.Q<5>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+
+		if (std::abs(Q1 + Q2 - Q) < 0.1) {
+			std::cerr << "e=" << prm->e << " s=" << prm->s << " z+ =" << prm->v_db + x << " z- =" << prm->v_ub - x << " v_db=" << prm->v_db
+				<< " v_ub=" << prm->v_ub << '\n';
+			throw 1;
+		}
+
+	}
+	catch (int) {
+		std::cerr << '\n' << "Q = " << Q << '\n';
+		exit(1);
+		//return 0.; 
+	}
+	if ((Q1 == -1) || (Q2 == -1)) {
+		std::cout << "don't select type bounds. Q1 = " << Q1 << " \t" << prm->type_bounds_down << "; Q2 = " << Q2 << " \t" << prm->type_bounds_up << '\n';
+		exit(1);
+	}
+
+	return Q1 + Q2;
 }
 
 bool flagl = false;
@@ -60,15 +170,17 @@ double first_integral(double s , void * parametr_ ) {
 	case 0: {
 		bl = parametr->down(e, t, s);
 		bu = parametr->up(e, t, s);
-		if (bu > 1)
+		if (bu > 1) {
 			bu = 1;
-		if (bl < 0)
+			parametr->c_ub->type_bounds = 5;
+		}
+		if (bl < 0) {
 			bl = 0;
+			parametr->c_db->type_bounds = 4;
+		}
 		if (bu < bl)
 			return 0;
 
-		bl = std::sqrt(bl);
-		bu = std::sqrt(bu);
 	}
 	case 1: {
 		bl = 0.0;
@@ -90,11 +202,17 @@ double first_integral(double s , void * parametr_ ) {
 	f_integral.function = parametr->f;
 	f_integral.params = parametr_;
 
-	double bounds[2] = {bl , bu};
+	double bounds[2] = {0 , (bu - bl) / 2. };
 
+	parametr->v_db = bl;
+	parametr->v_ub = bu;
+
+
+	parametr->type_bounds_down = parametr->c_db->type_bounds;
+	parametr->type_bounds_up = parametr->c_ub->type_bounds;
 
 	auto status = gsl_integration_qagp(&(f_integral),
-				bounds, 
+				bounds,
 				2,
 				parametr->error_in1,
 				parametr->error_in2,
@@ -234,6 +352,8 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 	UpBounds ub;
 	DownBounds db;
 
+	prm.c_ub = &ub;
+	prm.c_db = &db;
 	prm.up = ub.get_bounds(t); 
 	prm.down = db.get_bounds(t);
 
@@ -257,7 +377,7 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 			});
 		prm.f = f;
 		prm.t = t;
-		prm.set_e(e);
+		prm.e = e;
 		prm.size_memory_1 = 100000;
 		prm.size_memory_2 = 100000;
 		prm.memory1 = gsl_integration_workspace_alloc(prm.size_memory_1);
@@ -273,9 +393,9 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 	prm.value_first_int;
 
 	double start = clock();
-	cout << "step_for_second_arg" << step_for_second_arg << '\n';
+	cout << "step_for_second_arg " << step_for_second_arg << '\n';
 	for (double second_arg =min_arg; second_arg < max_arg; second_arg += step_for_second_arg) {
-		flagu = flagl = false;
+		//flagu = flagl = false;
 		cout << second_arg << " \t";
 		double res = main_function(t, second_arg - 6. * t, prm, type_bounds);
 		cout << res ;
