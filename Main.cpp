@@ -17,126 +17,77 @@
 #include <map>
 #include "Bounds.h"
 #include "All_prm.h"
+#include <set>
 
 std::string prm_start;
 
 using namespace std::placeholders;
 
-/*/class stack_error {
-	using data = struct 
-	{
-		double* data_;
-		char* comment;
-		size_t size_data;
-		size_t size_comment;
-		
-	};
 
-	template<typename T , typename ...P>
-	size_t get_size_pack(T t , P ...& p) {
-		return get_size_pack(p...) + 1;
-	}
-
-
-	size_t get_size_pack(double d) {
-		return 1;
-	}
-
-	template< const int N = 0 ,typename ...P >
-	void add_double(double * arr_double ,double d , P ... & p) {
-		arr_double[N] = d;
-		add_double<N+1>(arr_double , p...);
-	}
-
-	template<const int N>
-	void add_double(double* arr_double, double d) {
-		arr_double[N] = d;
-	}
-
-
-	std::map<std::string, data> stack;
-public:
-
-	template<typename D>
-	void insert(char namedata[] ,char comment[], D... & d) {
-		data data_;
-		data_.data_ = new double[ data_.size_data = get_size_pack(d...) ];
-		add_double(data_.data_, d...);
-		size_t size_comment = 0;
-		while ( std::strcmp( comment[size_comment++] ,'\0') == 0 ){}
-		data_.comment = new char[data_.size_comment = size_comment];
-		for (size_t i = 0; i < size_comment; ++i)
-			data_.comment[i] = comment[i];
-
-		std::string str_namedata(namedata);
-
-		stack.insert(std::pair(str_namedata , data_) );
-
-	}
-
-	template<typename OUT>
-	void print_in(OUT out) {
-		for (auto& i : stack) {
-			out << i.first << '\n';
-			for (size_t j = 0 ; j < i.second.size_comment)
-		}
-	}
-};
-*/
-
-bool tmp(int x, int y) {
-	return std::abs(x - y) < 0.1;
-}
 
 double f(double x , void * param) {
 	auto prm = (all_prm *)param;
-	double Q1 = -1;
-	double Q2 = -1;
-
-	const auto cond1 = std::bind(tmp , prm->type_bounds_down , _1);
-	const auto cond2 = std::bind(tmp , prm->type_bounds_up , _1);
-
-	double Q = prm->func(prm->e, prm->t, prm->s, prm->v_db + x);
-	Q += prm->func(prm->e, prm->t, prm->s, prm->v_ub - x);
 	
+
+	double Q;
 	try {
 
-		if (cond1(1))
-			Q1 = prm->func.Q<1>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
-		if (cond1(2))
-			Q1 = prm->func.Q<2>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
-		if (cond1(3))
-			Q1 = prm->func.Q<3>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
-		if (cond1(4))
-			Q1 = prm->func.Q<4>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+		if (prm->version == 0) {
 
-		if (cond2(1))
-			Q2 = prm->func.Q<1>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
-		if (cond2(2))
-			Q2 = prm->func.Q<2>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
-		if (cond2(3))
-			Q2 = prm->func.Q<3>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
-		if (cond2(5))
-			Q2 = prm->func.Q<5>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+			Q = prm->func(prm->e, prm->t, prm->s, prm->v_db + x);
+			Q += prm->func(prm->e, prm->t, prm->s, prm->v_ub - x);
+		}
+		else {
+			switch (prm->type_bounds_down)
+			{
+				case 1 : {
+					Q = prm->func.Q<1>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+					break;
+				}
+				case 2: {
+					Q = prm->func.Q<2>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+					break;
+				}
+				case 3 : {
+					Q = prm->func.Q<3>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+					break;
+				}
+				case 4: {
+					Q = prm->func.Q<4>(prm->e, prm->t, prm->s, x, +1., prm->v_db);
+					break;
+				}
+			}
 
-		if (std::abs(Q1 + Q2 - Q) < 0.1) {
-			std::cerr << "e=" << prm->e << " s=" << prm->s << " z+ =" << prm->v_db + x << " z- =" << prm->v_ub - x << " v_db=" << prm->v_db
-				<< " v_ub=" << prm->v_ub << '\n';
-			throw 1;
+			switch (prm->type_bounds_up)
+			{
+				case 1: {
+					Q += prm->func.Q<1>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+					break;
+				}
+				case 2: {
+					Q += prm->func.Q<2>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+					break;
+				}
+				case 3: {
+					Q += prm->func.Q<3>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+					break;
+				}
+				case 5: {
+					Q += prm->func.Q<5>(prm->e, prm->t, prm->s, x, -1., prm->v_ub);
+					break;
+			}
+			}
+
 		}
 
 	}
 	catch (int) {
-		std::cerr << '\n' << "Q = " << Q << '\n';
+		std::cerr << "Error in function f(doube , void*)\n";
 		exit(1);
 		//return 0.; 
 	}
-	if ((Q1 == -1) || (Q2 == -1)) {
-		std::cout << "don't select type bounds. Q1 = " << Q1 << " \t" << prm->type_bounds_down << "; Q2 = " << Q2 << " \t" << prm->type_bounds_up << '\n';
-		exit(1);
-	}
 
-	return Q1 + Q2;
+	return Q;
 }
 
 bool flagl = false;
@@ -180,7 +131,7 @@ double first_integral(double s , void * parametr_ ) {
 		}
 		if (bu < bl)
 			return 0;
-
+		break;
 	}
 	case 1: {
 		bl = 0.0;
@@ -297,7 +248,7 @@ double rho(double t, double e , all_prm & parametr , int prm_ ) {
 
 		parametr.f = f;
 		parametr.t = t;
-		parametr.set_e(e);
+		parametr.e = e;
 		parametr.size_memory_1 = 100000;
 		parametr.size_memory_2 = 100000;
 		parametr.memory1 = gsl_integration_workspace_alloc(parametr.size_memory_1);
@@ -325,20 +276,19 @@ double rho(double t, double e , all_prm & parametr , int prm_ ) {
 	}	 
 }
 
-template<typename Str, typename T , typename C>
-void print(Str &  del, Str & end,C& out, T& word) {
-	out << word << end;
-}
 
-template<typename Str,typename T , typename ...R , typename C >
-void print(Str & del , Str & end ,C& out ,T& word, R& ... r) {
-	out << word << delimtr;
-	print(del , end ,out, r...);
-}
-
-template<const int prm_progr = 0>
-void progr(const double t , const double error_ext1 , const double error_ext2 , const double error_in1, const double error_in2, const double e = 0  , int type_bounds = 0
-	, double step=0.1) {
+// version: 1 - new, 0 - old
+void progr(	const double t , 
+			const double error_ext1 , // abs
+			const double error_ext2 , // rel
+			const double error_in1,   // abs
+			const double error_in2,   // rel
+			const double e = 0  ,
+			const int type_bounds = 0	,
+			const double step=0.1 ,
+			const int prm_progr = 0,
+			const int version = 1,
+			const bool error_write = false) {
 
 	using namespace std;
 	
@@ -347,7 +297,7 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 	prm.error_ext2  = error_ext2;
 	prm.error_in1   = error_in1;
 	prm.error_in2   = error_in2;
-	   	 
+	prm.version     = version;
 
 	UpBounds ub;
 	DownBounds db;
@@ -398,24 +348,36 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 		//flagu = flagl = false;
 		cout << second_arg << " \t";
 		double res = main_function(t, second_arg - 6. * t, prm, type_bounds);
-		cout << res ;
+		cout << res  << '\t';
 		//cout << flagu ? 1 : 0;
 		//cout << " \t";
 		//cout << flagl ? -1 : 0;
 		//cout << " \t";
 		//for (all_prm::vfi& i : prm.value_first_int)
 		//	cout << i.s << " \t" << i.int_for_zeta << " \t" << i.zeta1 << " \t" << i.zeta2 << " \t";
+		if (error_write) {
+			std::map<int, std::set<int> > type_integration;
+			for (auto& cods : list_cods_status)
+				for (auto status : cods.second)
+					if (type_integration.find(cods.first) == end(type_integration))
+						type_integration.insert(std::pair<int, std::set<int>>(cods.first, std::set<int>({ status->num_interg })));
+					else
+						type_integration.find(cods.first)->second.insert(status->num_interg);
+			for (auto& cods : list_cods_status) {
+				std::cout << gsl_strerror(cods.first) << " ";
+				const auto f_elem = type_integration.find(cods.first);
+				if (f_elem != type_integration.end())
+					for (auto i : f_elem->second)
+						std::cout << i << " ";
+				std::cout << "\t";
+			}
+		}
 		cout << " \n";
+		list_cods_status.clear();
 		prm.value_first_int.clear();
-		
+		std::cerr << (second_arg - min_arg) / (max_arg - min_arg) * 100 << "\% " << (clock() - start) / CLOCKS_PER_SEC << " sec\n";
 	}
-	const char * delim = "\t";
-	const char * end = "\n";
-	for (auto& cods : list_cods_status) {
-		std::cerr << gsl_strerror(cods.first) << '\n';
-		for (auto& data : cods.second)
-			std::cerr << "       " << data->e << "\t" << data->t << "\n";
- 	}
+
 }
 
 // ===========================================================================
@@ -424,8 +386,10 @@ void progr(const double t , const double error_ext1 , const double error_ext2 , 
 // name_programm -- название программы
 // ===========================================================================
 // parametr_programm -- параметр запуска программы. Определяют поведение программы при запуске.
-// "-с" -- расчета плотности состояний
-// "-f" -- расчет первого интеграла плотности состояния
+// "-с"   -- расчета плотности состояний
+// "-f"	  -- расчет первого интеграла плотности состояния
+// "-old" --
+// "-new" --
 // ===========================================================================
 // name_file_parametr -- название текстового файла с нужными данными для работы программы.
 // Данные определяются параметром запуска программы.
@@ -445,17 +409,19 @@ int main(int argc, char *argv[]) {
 		<< string(argv[1])
 		<< string(" ")
 		<< string( argv[2] )
+		<< string(" ")
+		<< string(argv[3])
 		<< string( "\n" ) ;
 
 	
 	gsl_set_error_handler_off();
 
-	if (argc == 3 ) {
+	if (argc == 4 ) {
 		
 
 		std::deque<double> arr_double;
 
-		std::ifstream param_file(std::string(argv[2]) + std::string(".txt"), std::ios::in);
+		std::ifstream param_file(std::string(argv[3]), std::ios::in);
 		std::string line;
 		if (param_file.is_open())
 			while (getline(param_file, line))
@@ -467,16 +433,32 @@ int main(int argc, char *argv[]) {
 
 		param_file.close();
 
+		const auto progr_bind = std::bind(progr, arr_double[0], arr_double[1], arr_double[2], arr_double[3], arr_double[4], arr_double[5], arr_double[6], arr_double[7], _1 , _2 , bool(arr_double[8]));
+
 		prm_start = std::string(argv[1]);
+
+		int type_bounds;
+		int ver;
 
 		if ( std::strcmp( argv[1] , "-c") == 0 ) {
 			std::cout << "start -c\n";
-			progr(arr_double[0], arr_double[1], arr_double[2] , arr_double[3] , arr_double[4] ,arr_double[5] , arr_double[6], arr_double[7]);
+			type_bounds = 0;
+			
 		}
 		if ( std::strcmp( argv[1] , "-f" ) == 0 ) {
 			std::cout << "start -f\n";
-			progr<1>(arr_double[0], arr_double[1], arr_double[2], arr_double[3], arr_double[4], arr_double[5], arr_double[6], arr_double[7]);
+			type_bounds = 1;
+			
 		}
+		if (std::strcmp(argv[2], "-old") == 0) {
+			std::cout << "start -old\n";
+			ver = 0;
+		}
+		if (std::strcmp(argv[2], "-new") == 0) {
+			std::cout << "start -new\n";
+			ver = 1;
+		}
+		progr_bind(type_bounds , ver);
 		
 	}
 

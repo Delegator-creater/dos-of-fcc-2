@@ -61,24 +61,24 @@ double R_f(ARG_3, double d) {
 }
 
 template<>
-double R_f<0>(ARG_3, double d) {
+inline double R_f<0>(ARG_3, double d) {
 	return -t * (1. + 2. * t) * sqr_(1. - std::abs(s)) * d;
 }
 
 template<>
-double R_f<-1>(ARG_3, double d) {
+inline double R_f<-1>(ARG_3, double d) {
 	return sqr_(t+s)-t * (1. + 2. * t) * sqr_(1. - std::abs(s)) * d;
 }
 
 
 template<>
-double R_f<1>(ARG_3, double d) {
+inline double R_f<1>(ARG_3, double d) {
 	return sqr_(t - s) - t * (1. + 2. * t) * sqr_(1. - std::abs(s)) * d;
 }
 
 
 template<const int bounds>
-double arg_psi(ARG_3, double d ) {
+static double arg_psi(ARG_3, double d ) {
 	double a1 = (1.+2.*t)*sqr_(1.-std::abs(s))*d;
 	double a2 = t - double(bounds) * s + std::sqrt(R_f<bounds>(e,t,s,d));
 	double result = a1 / a2;

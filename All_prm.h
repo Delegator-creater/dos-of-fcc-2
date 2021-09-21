@@ -47,6 +47,8 @@ public:
 	};
 	std::deque<vfi> value_first_int;
 
+	int version;
+
 	// tmp_value:
 	int  type_bounds_up;
 	int  type_bounds_down;

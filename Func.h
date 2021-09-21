@@ -21,15 +21,15 @@ public:
 	double operator()(ARG_3, double)  ;
 
 	template<const int case_>
-	double Q(ARG_3, double d, double dir, double zeta_ast) {
+	inline double Q(ARG_3, double d, double dir, double zeta_ast) {
 		try {
 			double z = zeta_ast + dir * d;
 			static double a1 = 1 / (2 * std::pow(3.14159, 3));
 			double a2 = case_ == 5 ? 1 / std::sqrt(d * (1 - d)) : 1 / std::sqrt((1 - z) * z);
-			double a3 = case_ == 5 ? std::sqrt(4 * std::abs(s) - sqr_(1 - std::abs(s)) * d)
-				: std::sqrt(sqr_(1 + std::abs(s)) - sqr_(1 - std::abs(s)) * z);
+			double a3 = case_ == 5 ? 4 * std::abs(s) - sqr_(1 - std::abs(s)) * d
+				: sqr_(1 + std::abs(s)) - sqr_(1 - std::abs(s)) * z;
 			double R_class = (1. + t - 2. * sqr_(t)) * sqr_(s) -
-				t * (e / 4. + (1. + 2. * t) * sqr_(1. - std::abs(s)) * sqr_(z));
+				t * (e / 4. + (1. + 2. * t) * sqr_(1. - std::abs(s)) * z);
 			double R = case_ != 3 ? R_class : R_f<0>(e, t, s, d * dir);
 			double phi_or_phi;
 			switch (case_)
@@ -48,8 +48,16 @@ public:
 			}
 			}
 			double result = a1 * a2 / std::sqrt(a3 * R) * phi_or_phi;
-			//static bool flag = true;
-			if ( ((a3 * R) <= 0) || ( (case_ > 2) && (R <= 0))) {
+			
+			if ( ((a3 * R) <= 0) || 
+					( 
+						(case_ > 2) &&
+							(
+								(R <= 0) ||
+								(std::abs((std::sqrt(R) + s) / t) >= 1)
+							)
+					)
+				) {
 				//std::cerr << "in funcion Q<case_>, case_ = " << case_ << "; prm: e=" << e << " t =" << t << " s =" << s << " d=" << d << " dir =" << dir << " a1="
 				//	<< a1 << " a2 =" << a2 << " a3=" << a3 << " R=" << R << " phi_or_phi=" << phi_or_phi << " zeta_ast=" << zeta_ast << " \n";
 				result = 0;
@@ -66,6 +74,8 @@ public:
 		}
 
 	}
+
+
 
 	~Func() {
 		out.close();
