@@ -2,8 +2,9 @@
 #define BOUNDS_H
 #include "Macros.h"
 #include <functional>
+#include "Interval.h"
 class Bounds {
-protected:
+public:
 
 	double Z(double e, double t, double s, double f);
 
@@ -17,8 +18,8 @@ protected:
 
 
 
-public:
-	int type_bounds;
+
+	char type_bounds;
 	void edit_fild(int x) {
 		type_bounds = x;
 	}
@@ -44,6 +45,7 @@ public:
 	//*******************************//
 	fd_3x get_bounds(const double t_); 
 
+	Interval get_s_bounds(const double t, const double e, const bool is_s_more_t);
 
 
 
@@ -67,6 +69,7 @@ public:
 
 	fd_3x get_bounds(const double t_);
 
+	Interval get_s_bounds(const double t, const double e, const bool is_s_more_t);
 };
 
 

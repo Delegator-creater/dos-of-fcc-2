@@ -8,7 +8,10 @@
 #include <iostream>
 #include "spt_func.h"
 #include "phi.h"
+#include "out_err.h"
+#include "Stopwatch.h"
 
+static Stopwatch stch_Func_Q;
 class Func {
 	std::ofstream out;
 	using _str = std::string;
@@ -21,7 +24,8 @@ public:
 	double operator()(ARG_3, double)  ;
 
 	template<const int case_>
-	inline double Q(ARG_3, double d, double dir, double zeta_ast) {
+	double Q(ARG_3, double d, double dir, double zeta_ast) {
+		stch_Func_Q.start();
 		try {
 			double z = zeta_ast + dir * d;
 			static double a1 = 1 / (2 * std::pow(3.14159, 3));
@@ -39,7 +43,7 @@ public:
 				break;
 			}
 			case 2: {
-				phi_or_phi = psi(arg_psi<+1>(e, t, s, dir * d));
+				phi_or_phi = psi(arg_psi<1>(e, t, s, dir * d));
 				break;
 			}
 			default: {
@@ -58,17 +62,21 @@ public:
 							)
 					)
 				) {
-				//std::cerr << "in funcion Q<case_>, case_ = " << case_ << "; prm: e=" << e << " t =" << t << " s =" << s << " d=" << d << " dir =" << dir << " a1="
+				stch_Func_Q.end();
+				//err << "in funcion Q<case_>, case_ = " << case_ << "; prm: e=" << e << " t =" << t << " s =" << s << " d=" << d << " dir =" << dir << " a1="
 				//	<< a1 << " a2 =" << a2 << " a3=" << a3 << " R=" << R << " phi_or_phi=" << phi_or_phi << " zeta_ast=" << zeta_ast << " \n";
 				result = 0;
 			}
 			if ((d * (1 - d) < 0) || (z * (1 - z) < 0)) {
-				std::cerr << "z=" << z << " d=" << d << "\n";
+				err_ << "z=" << z << " d=" << d << "\n";
+				stch_Func_Q.end();
 				throw 1;
 			}
+			stch_Func_Q.end();
 			return result;
 		}
 		catch (int){
+			stch_Func_Q.end();
 			throw 1;
 			//return 0;
 		}
@@ -81,4 +89,18 @@ public:
 		out.close();
 	}
 };
+
+using Regime = struct {
+	char regime, bound;
+};
+
+using Integrand2_prms = struct {
+	double e, tau, s;
+	short sgn; // dir
+	Regime R; // режим , граница
+};
+
+double f_zeta(double s, double e, double tau, char t);
+
+double integrand2(double x, void* prms);
 #endif

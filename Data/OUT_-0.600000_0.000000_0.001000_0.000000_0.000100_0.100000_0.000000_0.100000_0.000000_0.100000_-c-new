@@ -1,0 +1,9 @@
+start -c
+start -new
+start for t =-0.600000
+step_for_second_arg 1.000000e-01
+-3.600000e+00 	-nan	 
+-3.500000e+00 	-nan	 
+-3.400000e+00 	-nan	 
+-3.300000e+00 	-nan	 
+-3.200000e+00 	-nan	 

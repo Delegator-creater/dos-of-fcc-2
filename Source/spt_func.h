@@ -6,6 +6,7 @@
 #include <deque>
 #include <cmath>
 #include "Macros.h"
+#include "out_err.h"
 
 //auto const sqr = std::bind(std::pow<double, double>, std::placeholders::_1, 2);
 double sqr_(double x);
@@ -55,9 +56,8 @@ inline bool inter(Num1 x, Num2 x1, Num3 x2)
 
 template<const int type>// 0 , -1 , 1
 double R_f(ARG_3, double d) {
-	std::cerr << "Invalid template argument in spt_func.h/R\n";
-	throw "Invalid template argument in spt_func.h/R";
-	return double(0);
+	//err << "Unimplemented template parameter specified for function R_f<" << type << ">";
+	exit(1);
 }
 
 template<>
@@ -82,13 +82,20 @@ static double arg_psi(ARG_3, double d ) {
 	double a1 = (1.+2.*t)*sqr_(1.-std::abs(s))*d;
 	double a2 = t - double(bounds) * s + std::sqrt(R_f<bounds>(e,t,s,d));
 	double result = a1 / a2;
-	if ((R_f<bounds>(e, t, s, d) <= 0) || (result <=0 ) || (result >= 1 )) {
-		std::cerr << "Error in function arg_psi, bounds =" << bounds << " e=" << e << " t=" << t << " s=" << s << " d=" << d <<" sqr_(t+s)="<< sqr_(t + s) <<
+	if ((R_f<bounds>(e, t, s, d) <= 0) || (result <=0. ) || (result >= 1. )) {
+		err_ << "Error in function arg_psi, bounds =" << bounds << " e=" << e << " t=" << t << " s=" << s << " d=" << d <<" sqr_(t+s)="<< sqr_(t + s) <<
 			" t * (1. + 2. * t)=" << t * (1. + 2. * t) << " result=" << result << " R_f<bounds>(e, t, s, d)="<< R_f<bounds>(e, t, s, d) << '\n';
 		throw 1;
 	}
 	return result;
 }
 
+#include <set>
+#include <memory>
+#include <vector>
+template <typename T>
+using Matr_T = std::vector<std::vector<T>>;
+
+std::set<size_t> * depth_search(const Matr_T<bool> & matrix_adj, size_t elem, std::set<size_t>* stack = new std::set<size_t>);
 
 #endif

@@ -1,5 +1,6 @@
 #ifndef ALL_PRM_H
 #define ALL_PRM_H
+#include "Bounds.h"
 #include "Func.h"
 #include <string>
 
@@ -33,8 +34,6 @@ public:
 
 	Func func;
 
-	gsl_integration_workspace* memory1;
-	gsl_integration_workspace* memory2;
 
 	size_t size_memory_1;
 	size_t size_memory_2;
@@ -48,10 +47,12 @@ public:
 	std::deque<vfi> value_first_int;
 
 	int version;
+	int prm_progr;
 
 	// tmp_value:
 	int  type_bounds_up;
 	int  type_bounds_down;
+
 };
 
 #endif
